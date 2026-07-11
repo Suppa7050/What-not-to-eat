@@ -32,6 +32,9 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Routes
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 app.use('/auth', authRoutes);
 app.use('/profile', profileRoutes);
 app.use('/scan', scanRoutes);
