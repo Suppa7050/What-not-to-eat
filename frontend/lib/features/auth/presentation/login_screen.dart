@@ -11,29 +11,42 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _isLogin = true; // Toggle between Login and Register
 
-  Future<void> _verifyEmail() async {
+  Future<void> _submit() async {
     setState(() => _isLoading = true);
     
-    final email = _emailController.text.trim();
-    if (email.isEmpty || !email.contains('@')) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a valid email')));
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text;
+
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
       setState(() => _isLoading = false);
       return;
     }
 
     try {
-      await ref.read(authRepositoryProvider).sendOtp(email);
+      if (_isLogin) {
+        await ref.read(authRepositoryProvider).login(username, password);
+      } else {
+        await ref.read(authRepositoryProvider).register(username, password);
+      }
+      
       if (mounted) {
         setState(() => _isLoading = false);
-        context.push('/otp', extra: email);
+        context.go('/splash'); // Go back to splash to fetch profile and route properly
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        String errorMessage = e.toString();
+        if (errorMessage.startsWith('Exception: ')) {
+          errorMessage = errorMessage.substring(11);
+        }
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
       }
     }
   }
@@ -48,35 +61,56 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.security, size: 80, color: Colors.green),
+              const Icon(Icons.lock, size: 80, color: Colors.green),
               const SizedBox(height: 32),
               Text(
-                'Login',
+                _isLogin ? 'Login' : 'Create Account',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
               TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
+                controller: _usernameController,
+                keyboardType: TextInputType.text,
                 decoration: InputDecoration(
-                  labelText: 'Email Address',
+                  labelText: 'Username',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.email),
+                  prefixIcon: const Icon(Icons.person),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.password),
                 ),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: _isLoading ? null : _verifyEmail,
+                onPressed: _isLoading ? null : _submit,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _isLoading 
                     ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Send OTP', style: TextStyle(fontSize: 16)),
+                    : Text(_isLogin ? 'Login' : 'Register', style: const TextStyle(fontSize: 16)),
               ),
               const SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _isLogin = !_isLogin;
+                  });
+                },
+                child: Text(
+                  _isLogin ? "Don't have an account? Register" : "Already have an account? Login", 
+                  style: const TextStyle(fontSize: 14)
+                ),
+              ),
               TextButton(
                 onPressed: () {
                   context.go('/profile-setup');

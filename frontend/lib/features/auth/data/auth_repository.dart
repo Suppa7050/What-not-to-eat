@@ -13,27 +13,45 @@ class AuthRepository {
 
   AuthRepository(this._dio);
 
-  Future<void> sendOtp(String email) async {
+  Future<void> login(String username, String password) async {
     try {
-      await _dio.post('/auth/send-otp', data: {'email': email});
-    } catch (e) {
-      throw Exception('Failed to send OTP: $e');
-    }
-  }
-
-  Future<void> verifyOtp(String email, String code) async {
-    try {
-      final response = await _dio.post('/auth/verify-otp', data: {
-        'email': email,
-        'code': code,
+      final response = await _dio.post('/auth/login', data: {
+        'username': username,
+        'password': password,
       });
       final token = response.data['token'];
       if (token != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('jwt_token', token);
       }
+    } on DioException catch (e) {
+      if (e.response != null && e.response!.data != null) {
+        throw Exception(e.response!.data['error'] ?? 'Failed to login');
+      }
+      throw Exception('Failed to login: $e');
     } catch (e) {
-      throw Exception('Failed to verify OTP: $e');
+      throw Exception('Failed to login: $e');
+    }
+  }
+
+  Future<void> register(String username, String password) async {
+    try {
+      final response = await _dio.post('/auth/register', data: {
+        'username': username,
+        'password': password,
+      });
+      final token = response.data['token'];
+      if (token != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('jwt_token', token);
+      }
+    } on DioException catch (e) {
+      if (e.response != null && e.response!.data != null) {
+        throw Exception(e.response!.data['error'] ?? 'Failed to register');
+      }
+      throw Exception('Failed to register: $e');
+    } catch (e) {
+      throw Exception('Failed to register: $e');
     }
   }
 }
