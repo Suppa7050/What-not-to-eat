@@ -7,8 +7,7 @@ const User = require('../models/User');
 const otpStore = new Map();
 
 // Configure Nodemailer transporter
-// using a generic Ethereal test account or Gmail if provided
-const transporter = nodemailer.createTransport({
+const transporterConfig = {
   host: process.env.SMTP_HOST || 'smtp.ethereal.email',
   port: process.env.SMTP_PORT || 587,
   secure: process.env.SMTP_SECURE === 'true', 
@@ -16,7 +15,15 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
-});
+};
+
+// Fix for Render: Google's IPv6 addresses can cause ENETUNREACH on Render's network.
+// Using the built-in 'gmail' service automatically configures the best connection options.
+if (process.env.SMTP_HOST === 'smtp.gmail.com') {
+  transporterConfig.service = 'gmail';
+}
+
+const transporter = nodemailer.createTransport(transporterConfig);
 
 const sendOtp = async (req, res) => {
   try {

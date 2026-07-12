@@ -19,28 +19,42 @@ class ProfileRepository {
   Future<UserProfile> getProfile() async {
     final prefs = await SharedPreferences.getInstance();
     
-    // First, try to fetch from backend if logged in
+    // Try to load local profile first for instant UI loading
+    final localData = prefs.getString(_localProfileKey);
+    if (localData != null) {
+      // Trigger background sync but don't await it
+      _syncFromBackend(prefs);
+      return UserProfile.fromJson(jsonDecode(localData));
+    }
+    
+    // If no local data, we must fetch from backend if logged in
     final token = prefs.getString('jwt_token');
     if (token != null && token.isNotEmpty) {
       try {
         final response = await _dio.get('/profile');
         final profile = UserProfile.fromJson(response.data);
-        // Save fetched profile locally
         await prefs.setString(_localProfileKey, jsonEncode(profile.toJson()));
         return profile;
       } catch (e) {
-        // Fall back to local if API fails
+        // Fall back
       }
-    }
-
-    // Try to load local profile (Guest mode or offline fallback)
-    final localData = prefs.getString(_localProfileKey);
-    if (localData != null) {
-      return UserProfile.fromJson(jsonDecode(localData));
     }
     
     // Default empty profile
     return UserProfile();
+  }
+
+  Future<void> _syncFromBackend(SharedPreferences prefs) async {
+    final token = prefs.getString('jwt_token');
+    if (token != null && token.isNotEmpty) {
+      try {
+        final response = await _dio.get('/profile');
+        final profile = UserProfile.fromJson(response.data);
+        await prefs.setString(_localProfileKey, jsonEncode(profile.toJson()));
+      } catch (e) {
+        // Ignore background sync errors
+      }
+    }
   }
 
   Future<UserProfile> updateProfile({
