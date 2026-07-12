@@ -13,18 +13,18 @@ class AuthRepository {
 
   AuthRepository(this._dio);
 
-  Future<void> sendOtp(String phoneNumber) async {
+  Future<void> sendOtp(String email) async {
     try {
-      await _dio.post('/auth/send-otp', data: {'phone_number': phoneNumber});
+      await _dio.post('/auth/send-otp', data: {'email': email});
     } catch (e) {
       throw Exception('Failed to send OTP: $e');
     }
   }
 
-  Future<void> verifyOtp(String phoneNumber, String code) async {
+  Future<void> verifyOtp(String email, String code) async {
     try {
       final response = await _dio.post('/auth/verify-otp', data: {
-        'phone_number': phoneNumber,
+        'email': email,
         'code': code,
       });
       final token = response.data['token'];

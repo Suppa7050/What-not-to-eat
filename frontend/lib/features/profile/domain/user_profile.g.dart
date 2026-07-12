@@ -7,20 +7,24 @@ part of 'user_profile.dart';
 // **************************************************************************
 
 UserProfile _$UserProfileFromJson(Map<String, dynamic> json) => UserProfile(
-  id: json['id'] as String,
+  id: json['id'] as String?,
   username: json['username'] as String?,
-  phoneNumber: json['phoneNumber'] as String,
+  email: json['email'] as String?,
   age: (json['age'] as num?)?.toInt(),
   height: (json['height'] as num?)?.toDouble(),
   weight: (json['weight'] as num?)?.toDouble(),
+  hasDiabetes: json['hasDiabetes'] as bool? ?? false,
+  additionalNotes: json['additionalNotes'] as String?,
 );
 
 Map<String, dynamic> _$UserProfileToJson(UserProfile instance) =>
     <String, dynamic>{
       'id': instance.id,
       'username': instance.username,
-      'phoneNumber': instance.phoneNumber,
+      'email': instance.email,
       'age': instance.age,
       'height': instance.height,
       'weight': instance.weight,
+      'hasDiabetes': instance.hasDiabetes,
+      'additionalNotes': instance.additionalNotes,
     };

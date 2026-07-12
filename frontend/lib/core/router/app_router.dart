@@ -28,8 +28,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/otp',
         builder: (context, state) {
-          final phoneNumber = state.extra as String? ?? '';
-          return OtpScreen(phoneNumber: phoneNumber);
+          final email = state.extra as String? ?? '';
+          return OtpScreen(email: email);
         }
       ),
       GoRoute(

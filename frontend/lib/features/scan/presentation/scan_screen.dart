@@ -5,6 +5,7 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/scan_repository.dart';
+import '../../profile/data/profile_repository.dart';
 
 class ScanScreen extends ConsumerStatefulWidget {
   const ScanScreen({super.key});
@@ -16,9 +17,55 @@ class ScanScreen extends ConsumerStatefulWidget {
 class _ScanScreenState extends ConsumerState<ScanScreen> {
   File? _imageFile;
   bool _isScanning = false;
+  String? _errorMessage;
+  final _concernController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkProfileDetails();
+    });
+  }
+
+  Future<void> _checkProfileDetails() async {
+    try {
+      final profile = await ref.read(profileRepositoryProvider).getProfile();
+      // If user hasn't added any of the key details, show the popup
+      if (profile.age == null && profile.height == null && profile.weight == null && !profile.hasDiabetes && (profile.additionalNotes == null || profile.additionalNotes!.isEmpty)) {
+        if (mounted) _showProfileDetailsPopup();
+      }
+    } catch (e) {
+      debugPrint('Failed to check profile details: $e');
+    }
+  }
+
+  void _showProfileDetailsPopup() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Personalize Your Experience'),
+        content: const Text('Please add your details (like age, weight, or health conditions) so we can accurately personalize the dietary analysis for you.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Later', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.push('/profile-setup');
+            },
+            child: const Text('Add Details'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _pickImage(ImageSource source) async {
+    setState(() => _errorMessage = null);
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: source,
@@ -59,24 +106,27 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     setState(() => _isScanning = true);
 
     try {
-      final result = await ref.read(scanRepositoryProvider).scanImage(_imageFile!);
+      final profile = await ref.read(profileRepositoryProvider).getProfile();
+      final concern = _concernController.text.trim();
+
+      final result = await ref.read(scanRepositoryProvider).scanImage(
+        imageFile: _imageFile!, 
+        profile: profile,
+        concern: concern.isNotEmpty ? concern : null,
+      );
       if (mounted) {
         context.pushReplacement('/result', extra: result);
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isScanning = false);
         String errorMessage = e.toString();
         if (errorMessage.startsWith('Exception: ')) {
           errorMessage = errorMessage.substring(11);
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          )
-        );
+        setState(() {
+          _isScanning = false;
+          _errorMessage = errorMessage;
+        });
       }
     }
   }
@@ -87,7 +137,9 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
       appBar: AppBar(title: const Text('Scan Ingredients')),
       body: _isScanning 
         ? _buildLoadingState() 
-        : _buildSetupState(),
+        : _errorMessage != null
+          ? _buildErrorState()
+          : _buildSetupState(),
     );
   }
 
@@ -105,6 +157,42 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
           const SizedBox(height: 8),
           const Text('Our AI is carefully reviewing the nutritional data.'),
         ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 80, color: Colors.red),
+            const SizedBox(height: 24),
+            Text(
+              'Analysis Failed',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.red),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _errorMessage ?? 'Unknown error',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() => _errorMessage = null);
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try Again'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -138,6 +226,17 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (_imageFile != null) ...[
+                TextField(
+                  controller: _concernController,
+                  decoration: InputDecoration(
+                    labelText: 'Any specific concerns?',
+                    hintText: 'e.g., My child has a cold, can they eat this?',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               Row(
                 children: [
                   Expanded(

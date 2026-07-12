@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../data/auth_repository.dart';
+import '../../profile/data/profile_repository.dart';
 
 class OtpScreen extends ConsumerStatefulWidget {
-  final String phoneNumber;
-  const OtpScreen({super.key, required this.phoneNumber});
+  final String email;
+  const OtpScreen({super.key, required this.email});
 
   @override
   ConsumerState<OtpScreen> createState() => _OtpScreenState();
@@ -26,7 +27,8 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     }
 
     try {
-      await ref.read(authRepositoryProvider).verifyOtp(widget.phoneNumber, otp);
+      await ref.read(authRepositoryProvider).verifyOtp(widget.email, otp);
+      await ref.read(profileRepositoryProvider).syncLocalProfileToMongo();
       if (mounted) context.go('/splash'); // Splash will route to home/profile
     } catch (e) {
       if (mounted) {
@@ -48,7 +50,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Enter the 6-digit code sent to your phone',
+                'Enter the 6-digit code sent to your email',
                 style: Theme.of(context).textTheme.titleMedium,
                 textAlign: TextAlign.center,
               ),

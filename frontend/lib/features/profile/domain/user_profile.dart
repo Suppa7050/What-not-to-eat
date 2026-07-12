@@ -4,20 +4,24 @@ part 'user_profile.g.dart';
 
 @JsonSerializable()
 class UserProfile {
-  final String id;
+  final String? id;
   final String? username;
-  final String phoneNumber;
+  final String? email;
   final int? age;
   final double? height;
   final double? weight;
+  final bool hasDiabetes;
+  final String? additionalNotes;
 
   UserProfile({
-    required this.id,
+    this.id,
     this.username,
-    required this.phoneNumber,
+    this.email,
     this.age,
     this.height,
     this.weight,
+    this.hasDiabetes = false,
+    this.additionalNotes,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => _$UserProfileFromJson(json);

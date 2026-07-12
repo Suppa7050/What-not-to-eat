@@ -18,7 +18,7 @@ const verifyToken = async (req, res, next) => {
     if (decoded.id) {
       req.dbUserId = decoded.id;
     } else {
-      const dbUser = await User.findOne({ phoneNumber: decoded.phone_number });
+      const dbUser = await User.findOne({ email: decoded.email });
       if (dbUser) {
         req.dbUserId = dbUser._id;
       }
@@ -31,4 +31,25 @@ const verifyToken = async (req, res, next) => {
   }
 };
 
-module.exports = { verifyToken };
+const optionalVerifyToken = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next(); // Proceed without user context
+  }
+
+  const token = authHeader.split('Bearer ')[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key');
+    req.user = decoded;
+    if (decoded.id) {
+      req.dbUserId = decoded.id;
+    }
+  } catch (error) {
+    // Ignore invalid tokens for optional routes
+  }
+  next();
+};
+
+module.exports = { verifyToken, optionalVerifyToken };

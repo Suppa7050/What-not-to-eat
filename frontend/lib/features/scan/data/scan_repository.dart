@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../domain/scan_result.dart';
+import '../../profile/domain/user_profile.dart';
 
 final scanRepositoryProvider = Provider<ScanRepository>((ref) {
   final dio = ref.watch(dioProvider);
@@ -14,7 +15,11 @@ class ScanRepository {
 
   ScanRepository(this._dio);
 
-  Future<ScanResult> scanImage(File imageFile) async {
+  Future<ScanResult> scanImage({
+    required File imageFile,
+    required UserProfile profile,
+    String? concern,
+  }) async {
     try {
       String fileName = imageFile.path.split('/').last;
       
@@ -23,6 +28,8 @@ class ScanRepository {
           imageFile.path,
           filename: fileName,
         ),
+        "profile": profile.toJson(),
+        if (concern != null) "concern": concern,
       });
 
       final response = await _dio.post('/scan', data: formData);

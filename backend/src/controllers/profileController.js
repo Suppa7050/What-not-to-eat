@@ -10,10 +10,12 @@ const getProfile = async (req, res) => {
     res.status(200).json({
       id: user._id,
       username: user.username,
-      phoneNumber: user.phoneNumber,
+      email: user.email,
       age: user.age,
       height: user.height,
       weight: user.weight,
+      hasDiabetes: user.hasDiabetes,
+      additionalNotes: user.additionalNotes,
     });
   } catch (error) {
     console.error('Error fetching profile:', error);
@@ -23,10 +25,12 @@ const getProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { username, age, height, weight } = req.body;
+    const { username, age, height, weight, hasDiabetes, additionalNotes } = req.body;
     
     // Build update object
     const updateData = { age, height, weight };
+    if (hasDiabetes !== undefined) updateData.hasDiabetes = hasDiabetes;
+    if (additionalNotes !== undefined) updateData.additionalNotes = additionalNotes;
     if (username !== undefined) {
       updateData.username = username;
     }
@@ -44,10 +48,12 @@ const updateProfile = async (req, res) => {
     res.status(200).json({
       id: user._id,
       username: user.username,
-      phoneNumber: user.phoneNumber,
+      email: user.email,
       age: user.age,
       height: user.height,
       weight: user.weight,
+      hasDiabetes: user.hasDiabetes,
+      additionalNotes: user.additionalNotes,
     });
   } catch (error) {
     if (error.code === 11000 && error.keyPattern && error.keyPattern.username) {

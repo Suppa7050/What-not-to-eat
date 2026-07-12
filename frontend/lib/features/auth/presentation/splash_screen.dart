@@ -27,7 +27,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     if (token != null && token.isNotEmpty) {
       try {
         final profile = await ref.read(profileRepositoryProvider).getProfile();
-        if (profile.username == null || profile.username!.isEmpty) {
+        final setupSkipped = prefs.getBool('profile_setup_skipped') ?? false;
+        if ((profile.username == null || profile.username!.isEmpty) && !setupSkipped) {
           if (mounted) context.go('/profile-setup');
         } else {
           if (mounted) context.go('/');

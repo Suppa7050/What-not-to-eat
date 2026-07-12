@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../data/profile_repository.dart';
 
 class ProfileSetupScreen extends ConsumerStatefulWidget {
@@ -15,7 +16,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   final _ageController = TextEditingController();
   final _heightController = TextEditingController();
   final _weightController = TextEditingController();
+  final _notesController = TextEditingController();
+  bool _hasDiabetes = false;
   bool _isLoading = false;
+  bool _isLoggedIn = false;
 
   @override
   void initState() {
@@ -25,22 +29,34 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   Future<void> _loadProfile() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+      if (mounted) {
+        setState(() {
+          _isLoggedIn = token != null && token.isNotEmpty;
+        });
+      }
+
       final profile = await ref.read(profileRepositoryProvider).getProfile();
       if (profile.username != null) _usernameController.text = profile.username!;
       if (profile.age != null) _ageController.text = profile.age.toString();
       if (profile.height != null) _heightController.text = profile.height.toString();
       if (profile.weight != null) _weightController.text = profile.weight.toString();
+      if (profile.additionalNotes != null) _notesController.text = profile.additionalNotes!;
+      _hasDiabetes = profile.hasDiabetes;
     } catch (e) {
       debugPrint('No existing profile or error: $e');
     }
   }
 
+  Future<void> _skipSetup() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('profile_setup_skipped', true);
+    if (mounted) context.go('/');
+  }
+
   Future<void> _saveProfile() async {
     final username = _usernameController.text.trim();
-    if (username.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Username is required')));
-      return;
-    }
 
     setState(() => _isLoading = true);
     try {
@@ -49,7 +65,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         age: int.tryParse(_ageController.text),
         height: double.tryParse(_heightController.text),
         weight: double.tryParse(_weightController.text),
+        hasDiabetes: _hasDiabetes,
+        additionalNotes: _notesController.text.trim(),
       );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('profile_setup_skipped', true);
       if (mounted) context.go('/'); // Go to home
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving profile: $e')));
@@ -73,7 +93,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               TextField(
                 controller: _usernameController,
                 decoration: InputDecoration(
-                  labelText: 'Username (Required)',
+                  labelText: 'Username (Optional)',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
@@ -104,6 +124,23 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                title: const Text('Do you have diabetes?'),
+                value: _hasDiabetes,
+                onChanged: (val) => setState(() => _hasDiabetes = val),
+                contentPadding: EdgeInsets.zero,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _notesController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Anything else that matters',
+                  hintText: 'e.g. I am on a weight loss process, lactose intolerant...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isLoading ? null : _saveProfile,
@@ -115,6 +152,23 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                     ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Text('Save & Continue', style: TextStyle(fontSize: 16)),
               ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: _isLoading ? null : _skipSetup,
+                child: const Text('Continue without information', style: TextStyle(fontSize: 16, color: Colors.grey)),
+              ),
+              if (!_isLoggedIn) ...[
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.sync),
+                  label: const Text('Login to sync data'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => context.push('/login'),
+                ),
+              ],
             ],
           ),
         ),

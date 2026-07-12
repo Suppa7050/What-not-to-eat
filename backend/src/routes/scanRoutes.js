@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const { scanImage } = require('../controllers/scanController');
-const { verifyToken } = require('../middlewares/authMiddleware');
+const { optionalVerifyToken } = require('../middlewares/authMiddleware');
 
 // Setup multer for memory storage (we don't save the image to disk as per requirements)
 const storage = multer.memoryStorage();
@@ -13,6 +13,6 @@ const upload = multer({
   }
 });
 
-router.post('/', verifyToken, upload.single('image'), scanImage);
+router.post('/', optionalVerifyToken, upload.single('image'), scanImage);
 
 module.exports = router;

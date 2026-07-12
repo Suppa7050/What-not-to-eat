@@ -6,10 +6,14 @@ const userSchema = new mongoose.Schema({
     unique: true,
     sparse: true,
   },
-  phoneNumber: {
+  email: {
     type: String,
     required: true,
     unique: true,
+  },
+  phoneNumber: {
+    type: String,
+    sparse: true,
   },
   age: {
     type: Number,
@@ -19,6 +23,13 @@ const userSchema = new mongoose.Schema({
   },
   weight: {
     type: Number,
+  },
+  hasDiabetes: {
+    type: Boolean,
+    default: false,
+  },
+  additionalNotes: {
+    type: String,
   },
   createdAt: {
     type: Date,
