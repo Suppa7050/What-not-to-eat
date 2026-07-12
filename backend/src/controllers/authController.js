@@ -15,13 +15,9 @@ const transporterConfig = {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  // Force IPv4. Render's network sometimes drops or misroutes IPv6 to Google
+  family: 4
 };
-
-// Fix for Render: Google's IPv6 addresses can cause ENETUNREACH on Render's network.
-// Using the built-in 'gmail' service automatically configures the best connection options.
-if (process.env.SMTP_HOST === 'smtp.gmail.com') {
-  transporterConfig.service = 'gmail';
-}
 
 const transporter = nodemailer.createTransport(transporterConfig);
 
