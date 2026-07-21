@@ -19,6 +19,7 @@ class ScanRepository {
     required File imageFile,
     required UserProfile profile,
     String? concern,
+    String scanType = 'ingredient',
   }) async {
     try {
       String fileName = imageFile.path.split('/').last;
@@ -30,13 +31,19 @@ class ScanRepository {
         ),
         "profile": profile.toJson(),
         if (concern != null) "concern": concern,
+        "scanType": scanType,
       });
 
       final response = await _dio.post('/scan', data: formData);
       return ScanResult.fromJson(response.data);
     } on DioException catch (e) {
-      if (e.response != null && e.response?.data is Map && e.response?.data['error'] != null) {
-        throw Exception(e.response?.data['error']);
+      if (e.response != null && e.response?.data is Map) {
+        final data = e.response?.data as Map;
+        if (data['message'] != null) {
+          throw Exception(data['message']);
+        } else if (data['error'] != null) {
+          throw Exception(data['error']);
+        }
       }
       throw Exception('Failed to scan image: ${e.message}');
     } catch (e) {

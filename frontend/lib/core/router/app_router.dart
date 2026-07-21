@@ -35,7 +35,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/scan',
-        builder: (context, state) => const ScanScreen(),
+        builder: (context, state) {
+          final initialType = state.extra as String? ?? 'ingredient';
+          return ScanScreen(initialType: initialType);
+        }
       ),
       GoRoute(
         path: '/result',

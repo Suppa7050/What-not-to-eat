@@ -111,23 +111,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildScanAction(BuildContext context) {
-    return InkWell(
-      onTap: () => context.push('/scan'),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 32),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)),
+    return Row(
+      children: [
+        Expanded(
+          child: InkWell(
+            onTap: () => context.push('/scan', extra: 'ingredient'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceVariant,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.document_scanner, size: 48, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(height: 16),
+                  Text('Scan Ingredients', style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center),
+                ],
+              ),
+            ),
+          ),
         ),
-        child: Column(
-          children: [
-            Icon(Icons.document_scanner, size: 64, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 16),
-            Text('Tap to Scan Ingredients', style: Theme.of(context).textTheme.titleMedium),
-          ],
+        const SizedBox(width: 16),
+        Expanded(
+          child: InkWell(
+            onTap: () => context.push('/scan', extra: 'food'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceVariant,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.fastfood, size: 48, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(height: 16),
+                  Text('Scan Food Image', style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center),
+                ],
+              ),
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 

@@ -4,11 +4,13 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../data/scan_repository.dart';
 import '../../profile/data/profile_repository.dart';
 
 class ScanScreen extends ConsumerStatefulWidget {
-  const ScanScreen({super.key});
+  final String initialType;
+  const ScanScreen({super.key, this.initialType = 'ingredient'});
 
   @override
   ConsumerState<ScanScreen> createState() => _ScanScreenState();
@@ -16,6 +18,7 @@ class ScanScreen extends ConsumerStatefulWidget {
 
 class _ScanScreenState extends ConsumerState<ScanScreen> {
   File? _imageFile;
+  late String _scanType;
   bool _isScanning = false;
   String? _errorMessage;
   final _concernController = TextEditingController();
@@ -24,6 +27,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
   @override
   void initState() {
     super.initState();
+    _scanType = widget.initialType;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkProfileDetails();
     });
@@ -32,8 +36,8 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
   Future<void> _checkProfileDetails() async {
     try {
       final profile = await ref.read(profileRepositoryProvider).getProfile();
-      // If user hasn't added any of the key details, show the popup
-      if (profile.age == null && profile.height == null && profile.weight == null && !profile.hasDiabetes && (profile.additionalNotes == null || profile.additionalNotes!.isEmpty)) {
+      // If user hasn't added all of the key details, show the popup
+      if (profile.age == null || profile.height == null || profile.weight == null) {
         if (mounted) _showProfileDetailsPopup();
       }
     } catch (e) {
@@ -113,6 +117,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
         imageFile: _imageFile!, 
         profile: profile,
         concern: concern.isNotEmpty ? concern : null,
+        scanType: _scanType,
       );
       if (mounted) {
         context.pushReplacement('/result', extra: result);
@@ -206,9 +211,41 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.image_search, size: 80, color: Colors.grey[400]),
+                      if (_imageFile == null) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 32.0),
+                          child: SegmentedButton<String>(
+                            segments: const [
+                              ButtonSegment<String>(
+                                value: 'ingredient',
+                                label: Text('Ingredient List'),
+                                icon: Icon(Icons.document_scanner),
+                              ),
+                              ButtonSegment<String>(
+                                value: 'food',
+                                label: Text('Food Image'),
+                                icon: Icon(Icons.fastfood),
+                              ),
+                            ],
+                            selected: <String>{_scanType},
+                            onSelectionChanged: (Set<String> newSelection) {
+                              setState(() {
+                                _scanType = newSelection.first;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                      Icon(
+                        _scanType == 'ingredient' ? Icons.document_scanner : Icons.fastfood, 
+                        size: 80, 
+                        color: Colors.green[400]
+                      ),
                       const SizedBox(height: 16),
-                      Text('No image selected', style: TextStyle(color: Colors.grey[600], fontSize: 18)),
+                      Text(
+                        _scanType == 'ingredient' ? 'Scan the list of ingredients' : 'Scan the food image', 
+                        style: TextStyle(color: Colors.green[800], fontSize: 20, fontWeight: FontWeight.bold)
+                      ),
                     ],
                   ),
                 )
@@ -266,7 +303,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 ),
-                child: const Text('Analyze Ingredients', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Text('Analyze ${_scanType == 'ingredient' ? 'Ingredients' : 'Food'}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
