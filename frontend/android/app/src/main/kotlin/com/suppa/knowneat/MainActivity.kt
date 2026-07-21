@@ -1,4 +1,4 @@
-package com.example.what_not_to_eat
+package com.suppa.knowneat
 
 import io.flutter.embedding.android.FlutterActivity
 

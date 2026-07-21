@@ -39,22 +39,27 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         if (mounted) context.go('/login');
       }
     } else {
-      if (mounted) context.go('/login');
+      final setupSkipped = prefs.getBool('profile_setup_skipped') ?? false;
+      if (setupSkipped) {
+        if (mounted) context.go('/');
+      } else {
+        if (mounted) context.go('/login');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.fastfood, size: 80, color: Colors.green),
-            SizedBox(height: 24),
-            Text('What Not To Eat', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            SizedBox(height: 24),
-            CircularProgressIndicator(),
+            Image.asset('assets/logo.png', width: 120, height: 120),
+            const SizedBox(height: 24),
+            const Text('kNOw n eat', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green)),
+            const SizedBox(height: 24),
+            const CircularProgressIndicator(),
           ],
         ),
       ),
