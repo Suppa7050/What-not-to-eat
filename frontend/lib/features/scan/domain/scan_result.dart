@@ -34,7 +34,53 @@ class ScanResult {
     required this.disclaimer,
   });
 
-  factory ScanResult.fromJson(Map<String, dynamic> json) => _$ScanResultFromJson(json);
+  factory ScanResult.fromJson(Map<String, dynamic> json) {
+    return ScanResult(
+      productName: json['productName'] as String? ?? 'Unknown Product',
+      overallHealthScore: (json['overallHealthScore'] as num?)?.toInt() ?? 50,
+      overallIndicator: json['overallIndicator'] as String? ?? 'YELLOW',
+      summary: json['summary'] as String? ?? '',
+      goodIngredients: (json['goodIngredients'] as List<dynamic>?)
+              ?.map((e) => e?.toString() ?? '')
+              .where((e) => e.isNotEmpty)
+              .toList() ??
+          const [],
+      neutralIngredients: (json['neutralIngredients'] as List<dynamic>?)
+              ?.map((e) => e?.toString() ?? '')
+              .where((e) => e.isNotEmpty)
+              .toList() ??
+          const [],
+      badIngredients: (json['badIngredients'] as List<dynamic>?)
+              ?.map((e) => IngredientDetail.fromJson(e is Map<String, dynamic> ? e : {}))
+              .toList() ??
+          const [],
+      warnings: (json['warnings'] as List<dynamic>?)
+              ?.map((e) => e?.toString() ?? '')
+              .where((e) => e.isNotEmpty)
+              .toList() ??
+          const [],
+      healthBenefits: (json['healthBenefits'] as List<dynamic>?)
+              ?.map((e) => e?.toString() ?? '')
+              .where((e) => e.isNotEmpty)
+              .toList() ??
+          const [],
+      healthRisks: (json['healthRisks'] as List<dynamic>?)
+              ?.map((e) => e?.toString() ?? '')
+              .where((e) => e.isNotEmpty)
+              .toList() ??
+          const [],
+      recommendedFor: (json['recommendedFor'] as List<dynamic>?)
+          ?.map((e) => e?.toString() ?? '')
+          .where((e) => e.isNotEmpty)
+          .toList(),
+      notRecommendedFor: (json['notRecommendedFor'] as List<dynamic>?)
+          ?.map((e) => e?.toString() ?? '')
+          .where((e) => e.isNotEmpty)
+          .toList(),
+      disclaimer: json['disclaimer'] as String? ?? '',
+    );
+  }
+
   Map<String, dynamic> toJson() => _$ScanResultToJson(this);
 }
 
@@ -58,6 +104,17 @@ class IngredientDetail {
     required this.details,
   });
 
-  factory IngredientDetail.fromJson(Map<String, dynamic> json) => _$IngredientDetailFromJson(json);
+  factory IngredientDetail.fromJson(Map<String, dynamic> json) {
+    return IngredientDetail(
+      ingredient: json['ingredient'] as String? ?? 'Unknown Ingredient',
+      category: json['category'] as String? ?? 'Unknown',
+      healthScore: (json['healthScore'] as num?)?.toInt() ?? 50,
+      indicator: json['indicator'] as String? ?? 'YELLOW',
+      avoid: json['avoid'] as bool? ?? false,
+      reason: json['reason'] as String? ?? '',
+      details: json['details'] as String? ?? '',
+    );
+  }
+
   Map<String, dynamic> toJson() => _$IngredientDetailToJson(this);
 }
