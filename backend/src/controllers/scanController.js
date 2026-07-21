@@ -20,6 +20,7 @@ const scanImage = async (req, res) => {
       }
     }
     const concern = req.body.concern || '';
+    const scanType = req.body.scanType || 'ingredient';
 
     let profileText = "";
     if (profileData.age || profileData.weight || profileData.height) {
@@ -36,7 +37,7 @@ const scanImage = async (req, res) => {
     }
 
     // Call Gemini
-    const analysisJson = await analyzeImage(imageBuffer, mimeType, profileText);
+    const analysisJson = await analyzeImage(imageBuffer, mimeType, profileText, scanType);
 
     // If Gemini determined it cannot read the image
     if (analysisJson.error) {
