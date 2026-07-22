@@ -108,42 +108,46 @@ const analyzeImage = async (imageBuffer, mimeType, userProfileText = "", scanTyp
     }
   ];
 
-  const attemptModel = async (modelName) => {
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      systemInstruction: getSystemInstruction(scanType),
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: responseSchema,
-      }
-    });
+  const modelsToTry = [
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    // "gemini-1.5-flash"
+  ];
 
-    const result = await model.generateContent([prompt, ...imageParts]);
-    const response = await result.response;
-    return JSON.parse(response.text());
-  };
+  let lastError = null;
 
-  try {
-    return await attemptModel("gemini-3.5-flash");
-  } catch (error) {
-    console.warn(`Primary model (gemini-3.5-flash) failed: ${error.message}. Attempting fallback...`);
-
+  for (const modelName of modelsToTry) {
     try {
-      return await attemptModel("gemini-3.5-flash-lite");
-    } catch (fallbackError) {
-      console.error('Fallback model (gemini-3.5-flash-lite) also failed:', fallbackError);
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction: getSystemInstruction(scanType),
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: responseSchema,
+        }
+      });
 
-      let cleanMessage = 'Failed to analyze the image. Please try again later.';
-      if (fallbackError.message && fallbackError.message.includes('503')) {
-        cleanMessage = 'Our AI servers are currently experiencing high demand. Please try again in a few moments.';
-      } else if (fallbackError.message) {
-        // Strip out the ugly Google Generative AI prefix
-        cleanMessage = fallbackError.message.replace(/\[GoogleGenerativeAI Error\]:\s*/g, '');
-      }
-
-      throw new Error(cleanMessage);
+      const result = await model.generateContent([prompt, ...imageParts]);
+      const response = await result.response;
+      console.log(`Successfully processed image analysis using model: ${modelName}`);
+      return JSON.parse(response.text());
+    } catch (error) {
+      console.warn(`Model ${modelName} failed: ${error.message}. Trying next fallback...`);
+      lastError = error;
     }
   }
+
+  console.error('All Gemini model fallbacks failed:', lastError);
+  let cleanMessage = 'Failed to analyze the image. Please try again later.';
+  if (lastError && lastError.message) {
+    if (lastError.message.includes('503')) {
+      cleanMessage = 'Our AI servers are currently experiencing high demand. Please try again in a few moments.';
+    } else {
+      cleanMessage = lastError.message.replace(/\[GoogleGenerativeAI Error\]:\s*/g, '');
+    }
+  }
+  throw new Error(cleanMessage);
 };
 
 module.exports = { analyzeImage };
